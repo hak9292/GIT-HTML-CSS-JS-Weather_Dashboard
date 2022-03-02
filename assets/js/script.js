@@ -13,15 +13,28 @@ var searchBtn = $('#search-btn');
 
 
 function getCurrentCity(e) {
-    var currentDate = moment().format("M/DD/YYYY");
-    e.preventDefault();
     var cityName = searchedCityName.value;
-    var currentName = $('#current-name');
-    fetchForecast(cityName);
-    currentName.text(`${cityName} (${currentDate})`);
-    currentName.append(`<img id="icon-link">`);
-    $("#current-name").removeClass("hidden");
-    
+    var queryUrl = `https://api.openweathermap.org/data/2.5/weather?q=${cityName}&appid=${apiKey}&units=imperial`;
+    var fetchCurrentData = {
+        "url": queryUrl,
+        "method": "GET",
+        "timeout": 0,
+    }
+    $.ajax(fetchCurrentData).done(function (response) {
+        currentEpoch = response.dt;
+        var currDate = new Date(currentEpoch * 1000);
+        var currentDate = currDate.toLocaleDateString();
+        e.preventDefault();
+        var cityName = searchedCityName.value;
+        var currentName = $('#current-name');
+        fetchForecast(cityName);
+        currentName.text(`${cityName} (${currentDate})`);
+        currentName.append(`<img id="icon-link">`);
+        $("#current-name").removeClass("hidden");
+        fetch5Day(e);
+    });
+
+
 
     // return searchedCityName;
 }
@@ -36,18 +49,18 @@ function fetchForecast(cityName) {
         "timeout": 0,
     }
     $.ajax(fetchCurrentData).done(function (response) {
-    console.log(response);
-    console.log(response.weather[0].icon);
-    console.log(response.main.temp);
-    var iconID = response.weather[0].icon;
-    var iconX = `http://openweathermap.org/img/w/${iconID}.png`
-    var iconLink = $('#icon-link');
-    iconLink.attr('src', iconX);
-    var currentBox = $('#current-box');
-    var currentTemp = response.main.temp;
-    var currentWind = response.wind.speed;
-    var currentHumidity = response.main.humidity;
-    currentBox.append(`<p>
+        console.log(response);
+        console.log(response.weather[0].icon);
+        console.log(response.main.temp);
+        var iconID = response.weather[0].icon;
+        var iconX = `http://openweathermap.org/img/w/${iconID}.png`
+        var iconLink = $('#icon-link');
+        iconLink.attr('src', iconX);
+        var currentBox = $('#current-box');
+        var currentTemp = response.main.temp;
+        var currentWind = response.wind.speed;
+        var currentHumidity = response.main.humidity;
+        currentBox.append(`<p>
     Temp: ${currentTemp}
     </p>
     <br>
@@ -60,6 +73,10 @@ function fetchForecast(cityName) {
     </p>
     <br>
     `);
+        var currentLon = response.coord.lon;
+        var currentLat = response.coord.lat;
+        fetch5Day(currentLon, currentLat);
+
     });
 
     /*
@@ -70,7 +87,85 @@ function fetchForecast(cityName) {
     }
     */
 };
+function fetch5Day(currentLon, currentLat) {
+    var queryUrl = `https://api.openweathermap.org/data/2.5/onecall?lat=${currentLat}&lon=${currentLon}&exclude=minutely,hourly,alerts&appid=${apiKey}&units=imperial`;
+    var fetchCurrentData = {
+        "url": queryUrl,
+        "method": "GET",
+        "timeout": 0,
+    }
+    $.ajax(fetchCurrentData).done(function (response) {
+        // console.log(response);
+        // console.log(response.weather[0].icon);
+        // console.log(response.main.temp);
+        var fiveDayEl = $("#fiveDay");
+        fiveDayEl.text("5-Day Forecast:");
+        for (i = 0; i < 5; i ++) {
+            j = i + 1;
+            var tm = response.daily[j].dt;
+            var tmDate = new Date(tm * 1000).toLocaleDateString();
+            var tmIcon = response.daily[j].weather[0].icon;
+            console.log(tmIcon);
+            var tmIconX = `http://openweathermap.org/img/w/${tmIcon}.png`
+            var tmIconLink = $(`#tm${j}-icon-link`);
+            tmIconLink.attr('src', tmIconX);
+            var tmTemp = response.daily[j].temp.day;
+            var tmWind = response.daily[j].wind_speed;
+            var tmHumidity = response.daily[j].humidity;
+            var tmEl = $(`#tm${j}`);
 
+            tmEl.append(`<h5>
+        ${tmDate}
+
+    <img id="tm${j}-icon-link">
+    </h5>
+    <p>
+        Temp: ${tmTemp}\u00B0F
+    </p>
+    <p>
+        Wind: ${tmWind} MPH
+    </p>
+    <p>
+        Humidity: ${tmHumidity}%
+    </p>`)
+    var tmIconLink = $(`#tm${j}-icon-link`);
+    tmIconLink.attr('src', tmIconX);
+            // var tm1 = response.daily[2].dt;
+            // var tm1Date = new Date(tm * 1000).toLocaleDateString();
+            // var tm2 = response.daily[3].dt;
+            // var tm2Date = new Date(tm * 1000).toLocaleDateString();
+            // var tm3 = response.daily[4].dt;
+            // var tm3Date = new Date(tm * 1000).toLocaleDateString();
+            // var tm4 = response.daily[5].dt;
+            // var tm4Date = new Date(tm * 1000).toLocaleDateString();
+        }
+        // 01/10/2020, 10:35:02
+        // var iconX = `http://openweathermap.org/img/w/${iconID}.png`
+        // var iconLink = $('#icon-link');
+        // iconLink.attr('src', iconX);
+        // var currentBox = $('#current-box');
+        // var currentTemp = response.main.temp;
+        // var currentWind = response.wind.speed;
+        // var currentHumidity = response.main.humidity;
+        // currentBox.append(`<p>
+        // Temp: ${currentTemp}
+        // </p>
+        // <br>
+        // <p>
+        // Wind: ${currentWind}
+        // </p>
+        // <br>
+        // <p>
+        // Humidity: ${currentHumidity}%
+        // </p>
+        // <br>
+        // `);
+        // var currentLon = response.coord.lon;
+        // var currentLat = response.coord.lat;
+        // fetch5Day(currentLon, currentLat);
+
+    });
+}
 
 
 /*
