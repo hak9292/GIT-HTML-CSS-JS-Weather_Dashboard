@@ -3,3 +3,6 @@ hr.rounded {
     border-radius: 5px;
     
   }
+#current-box {
+  border: 1px solid black;
+}
